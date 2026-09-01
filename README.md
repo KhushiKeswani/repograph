@@ -47,15 +47,29 @@ flowchart TD
 
 ### Query time
 
-```mermaid
-flowchart TD
-    Q[User question] --> R[Embed question]
-    R --> S[Cosine similarity vs stored chunk embeddings]
-    S --> T[Top-k semantic matches, seed nodes]
-    T --> U[Graph traversal: in_edges and out_edges on CALLS]
-    U --> V[Pull in callers and callees of each seed]
-    V --> W[Combined, deduplicated, file and function labeled context]
-    W --> X[LLM via OpenRouter generates grounded answer]
+```
+User question
+      |
+      v
+Embed question
+      |
+      v
+Cosine similarity vs. stored chunk embeddings
+      |
+      v
+Top-k semantic matches (seed nodes)
+      |
+      v
+Graph traversal: in_edges / out_edges on CALLS
+      |
+      v
+Pull in callers and callees of each seed
+      |
+      v
+Combined, deduplicated, file/function-labeled context
+      |
+      v
+LLM (via OpenRouter) generates grounded answer
 ```
 
 This is what distinguishes it from plain RAG: semantic search alone finds text that *sounds* relevant, but has no notion of "this function calls that function." The graph traversal step adds structural relationships extracted directly from the AST — not guessed from text similarity.
