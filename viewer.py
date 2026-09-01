@@ -6,18 +6,11 @@ with open("graph.pkl", "rb") as f:
 print("Loaded graph OK")
 print("Nodes:", G.number_of_nodes())
 print("Edges:", G.number_of_edges())
-# ============================================================
 # FUNCTION: GET GRAPH FOR ONE FILE
-# ============================================================
-
 def get_file_graph(G, selected_file):
 
     H = nx.MultiDiGraph()
-
-    # --------------------------------------------------------
     # Add the selected FILE node
-    # --------------------------------------------------------
-
     for node, data in G.nodes(data=True):
 
         if (
@@ -29,11 +22,7 @@ def get_file_graph(G, selected_file):
                 node,
                 **data
             )
-
-    # --------------------------------------------------------
     # Add FUNCTIONS and CLASSES belonging to this file
-    # --------------------------------------------------------
-
     for node, data in G.nodes(data=True):
 
         if (
@@ -45,11 +34,7 @@ def get_file_graph(G, selected_file):
                 node,
                 **data
             )
-
-    # ========================================================
     # 3. ADD EDGES FROM SELECTED FILE
-    # ========================================================
-
     for source, target, data in G.edges(data=True):
 
         edge_type = data.get("type")
@@ -61,22 +46,12 @@ def get_file_graph(G, selected_file):
             "CALLS_UNRESOLVED"
         }:
             continue
-
-        # ----------------------------------------------------
         # Is the SOURCE inside our selected file?
-        # ----------------------------------------------------
-
         if source not in H.nodes:
             continue
-
-        # ----------------------------------------------------
         # Normal target
-        # ----------------------------------------------------
-
         if target in G.nodes:
-
             target_data = G.nodes[target]
-
             # If target is already in H, simply add edge
             if target in H.nodes:
 
@@ -85,31 +60,21 @@ def get_file_graph(G, selected_file):
                     target,
                     **data
                 )
-
-            # ------------------------------------------------
             # External / unresolved target
-            # ------------------------------------------------
-
             elif target_data.get("type") == "external":
-
                 H.add_node(
                     target,
                     **target_data
                 )
-
                 H.add_edge(
                     source,
                     target,
                     **data
                 )
-
     return H
 
-# ============================================================
 # SHOW AVAILABLE FILES
-# ============================================================
-
-print("\n================ AVAILABLE FILES ================\n")
+print("\nAVAILABLE FILES\n ")
 
 file_nodes = [
     (node, data)
@@ -122,12 +87,7 @@ for i, (node, data) in enumerate(file_nodes):
     print(
         f"{i + 1}. {data['file']}"
     )
-
-
-# ============================================================
 # SELECT FILE
-# ============================================================
-
 choice = int(
     input("\nSelect a file number: ")
 )
@@ -139,11 +99,7 @@ print(
     selected_file
 )
 
-
-# ============================================================
 # BUILD VISUALIZATION GRAPH
-# ============================================================
-
 H = get_file_graph(
     G,
     selected_file
@@ -158,12 +114,7 @@ print(
     "Visualized edges:",
     H.number_of_edges()
 )
-
-
-# ============================================================
 # CREATE PYVIS NETWORK
-# ============================================================
-
 net = Network(
     height="800px",
     width="100%",
@@ -173,11 +124,7 @@ net = Network(
     notebook=False
 )
 
-
-# ============================================================
 # VISUAL SETTINGS
-# ============================================================
-
 color_map = {
     "file": "#4a90d9",
     "function": "#7ed321",
@@ -195,28 +142,15 @@ size_map = {
     "function": 15,
     "class": 20
 }
-
-
-# ============================================================
 # ADD NODES TO PYVIS
-# ============================================================
-
 for node, data in H.nodes(data=True):
 
     node_type = data.get(
         "type",
         "function"
     )
-
-    # --------------------------------------------------------
-    # Label
-    # --------------------------------------------------------
     label = data["name"]
-
-    # --------------------------------------------------------
     # Add node
-    # --------------------------------------------------------
-
     net.add_node(
         node,
         label=label,
@@ -242,12 +176,7 @@ for node, data in H.nodes(data=True):
             f"— {data['file']}"
         )
     )
-
-
-# ============================================================
 # ADD EDGES TO PYVIS
-# ============================================================
-
 for source, target, data in H.edges(data=True):
 
     edge_type = data["type"]
@@ -273,12 +202,7 @@ for source, target, data in H.edges(data=True):
 
         arrows="to"
     )
-
-
-# ============================================================
 # HIERARCHICAL LAYOUT
-# ============================================================
-
 net.set_options("""
 {
     "interaction": {
@@ -336,12 +260,7 @@ net.set_options("""
     }
 }
 """)
-
-
-# ============================================================
 # WRITE HTML
-# ============================================================
-
 net.write_html(
     "codebase_graph.html",
     open_browser=True

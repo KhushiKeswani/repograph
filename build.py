@@ -88,17 +88,7 @@ for root, dirs, files in os.walk(repo_path):
                 doc_files.append(
                     os.path.join(root, f)
                 )
-
-
-print(config_files)
-print(source_files)
-print(doc_files)
-
-
-# ============================================================
 # AST ENTITY EXTRACTION
-# ============================================================
-
 nodes = []
 
 
@@ -108,11 +98,7 @@ for file in source_files:
         code = f.read()
 
     tree = ast.parse(code)
-
-    # --------------------------------------------------------
     # FILE NODE
-    # --------------------------------------------------------
-    
     nodes.append({
         "id": relpath,
         "name": Path(file).name,
@@ -120,10 +106,7 @@ for file in source_files:
         "file": relpath
     })
 
-    # --------------------------------------------------------
     # OTHER ENTITIES
-    # --------------------------------------------------------
-
     for node in ast.walk(tree):
 
         if isinstance(node, ast.FunctionDef):
@@ -174,26 +157,7 @@ for file in source_files:
                     "file": relpath
                 })
 
-
-# ============================================================
-# DISPLAY NODES
-# ============================================================
-
-print("\n================ NODES ================\n")
-
-for node in nodes:
-
-    print(
-        f"{node['type'].upper():10} "
-        f"{node['name']} "
-        f"-> {node['file']}"
-    )
-    if node.get("content"):
-        print(node["content"])
-# ============================================================
 # BUILD CONTAINS EDGES
-# ============================================================
-
 edges = []
 
 for node in nodes:
@@ -207,12 +171,7 @@ for node in nodes:
         "type": "CONTAINS",
         "target": node["id"]
     })
-
-
-# ============================================================
 # FUNCTION LOOKUP
-# ============================================================
-
 function_lookup = {}
 
 for node in nodes:
@@ -222,12 +181,7 @@ for node in nodes:
         function_lookup[
             (node["file"], node["name"])
         ] = node["id"]
-
-
-# ============================================================
 # IMPORT LOOKUP
-# ============================================================
-
 import_lookup = {}
 
 for node in nodes:
@@ -239,12 +193,7 @@ for node in nodes:
         import_lookup[
             (node["file"], imported_name)
         ] = node["name"]
-
-
-# ============================================================
 # FIND FUNCTION CALLS
-# ============================================================
-
 for file in source_files:
 
     with open(file, encoding="utf-8") as f:
@@ -255,34 +204,14 @@ for file in source_files:
     relpath = os.path.relpath(file, repo_path)
 
     for node in ast.walk(tree):
-
-        # ----------------------------------------------------
         # Find a function definition
-        # ----------------------------------------------------
-
         if isinstance(node, ast.FunctionDef):
-
             caller = f"{relpath}::{node.name}"
-
-            # Look inside this function
             for inner in ast.walk(node):
-
-                # ------------------------------------------------
-                # Find function calls
-                # ------------------------------------------------
-
                 if isinstance(inner, ast.Call):
-
-                    # We currently handle:
-                    # load_data()
                     if isinstance(inner.func, ast.Name):
-
                         callee = inner.func.id
-
-                        # ==================================================
                         # 1. CHECK LOCAL FUNCTION
-                        # ==================================================
-
                         local_target = function_lookup.get(
                             (relpath, callee)
                         )
@@ -300,10 +229,7 @@ for file in source_files:
                             # open(), float(), len(), print(), etc.
 
                             continue
-                        # ==================================================
                         # 2. CHECK IMPORTED FUNCTION
-                        # ==================================================
-
                         elif (relpath, callee) in import_lookup:
 
                             imported_symbol = import_lookup[
@@ -346,26 +272,16 @@ for file in source_files:
 
                                     target = graph_node["id"]
                                     break
-
-                            # ------------------------------------------------
                             # Imported function successfully resolved
-                            # ------------------------------------------------
-
                             if target:
-
                                 edges.append({
                                     "source": caller,
                                     "type": "CALLS",
                                     "target": target
                                 })
-
-                            # ------------------------------------------------
                             # Imported name found but actual function
                             # could not be found
-                            # ------------------------------------------------
-
                             else:
-
                                 unresolved_id = (
                                     f"external::{callee}"
                                 )
@@ -388,23 +304,16 @@ for file in source_files:
                                     "type": "CALLS_UNRESOLVED",
                                     "target": unresolved_id
                                 })
-
-                        # ==================================================
                         # 3. NOT LOCAL AND NOT IMPORTED
-                        # ==================================================
-
                         else:
-
                             unresolved_id = (
                                 f"external::{callee}"
                             )
-
                             # Create external node only once
                             if not any(
                                 n["id"] == unresolved_id
                                 for n in nodes
                             ):
-
                                 nodes.append({
                                     "id": unresolved_id,
                                     "name": callee,
@@ -471,16 +380,7 @@ for edge in edges:
         edge["target"]
     ) 
 import networkx as nx
-from pyvis.network import Network
-
-# ============================================================
-# BUILD THE FULL GRAPH (backend — used for retrieval later too)
-# ============================================================
-
-# ============================================================
 # BUILD NETWORKX GRAPH
-# ============================================================
-
 G = nx.MultiDiGraph()
 
 # Add nodes
@@ -500,8 +400,6 @@ for edge in edges:
         edge["target"],
         type=edge["type"]
     )
-
-print("\n================ GRAPH ================\n")
 
 print("Nodes:", G.number_of_nodes())
 print("Edges:", G.number_of_edges())
