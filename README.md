@@ -30,18 +30,18 @@ Example queries run against [AAPL-stock-prediction-model](https://github.com/Khu
 flowchart TD
     A[GitHub repo URL] --> B[git clone]
     B --> C[Python AST parsing per file]
-    C --> D["Extract nodes: files, functions, classes, imports"]
-    C --> E["Extract edges: CONTAINS, CALLS, IMPORTS"]
+    C --> D[Extract nodes: files, functions, classes, imports]
+    C --> E[Extract edges: CONTAINS, CALLS, IMPORTS]
     D --> F[Resolve calls]
     E --> F
-    F --> F1["local same-file lookup"]
-    F --> F2["import-based cross-file lookup"]
-    F --> F3["unresolved → tagged CALLS_UNRESOLVED"]
-    F1 --> G["Build NetworkX MultiDiGraph"]
+    F --> F1[local same-file lookup]
+    F --> F2[import-based cross-file lookup]
+    F --> F3[unresolved, tagged CALLS_UNRESOLVED]
+    F1 --> G[Build NetworkX MultiDiGraph]
     F2 --> G
     F3 --> G
     G --> H[(graph.pkl)]
-    G --> I["Embed function/class source\n(all-MiniLM-L6-v2)"]
+    G --> I[Embed function or class source using all-MiniLM-L6-v2]
     I --> J[(embeddings.pkl)]
 ```
 
@@ -49,13 +49,13 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    Q[User question] --> R["Embed question"]
-    R --> S["Cosine similarity vs.\nstored chunk embeddings"]
-    S --> T["Top-k semantic matches\n(seed nodes)"]
-    T --> U["Graph traversal:\nin_edges / out_edges on CALLS"]
-    U --> V["Pull in callers and callees\nof each seed"]
-    V --> W["Combined, deduplicated,\nfile/function-labeled context"]
-    W --> X["LLM (OpenRouter)\ngenerates grounded answer"]
+    Q[User question] --> R[Embed question]
+    R --> S[Cosine similarity vs stored chunk embeddings]
+    S --> T[Top-k semantic matches, seed nodes]
+    T --> U[Graph traversal: in_edges and out_edges on CALLS]
+    U --> V[Pull in callers and callees of each seed]
+    V --> W[Combined, deduplicated, file and function labeled context]
+    W --> X[LLM via OpenRouter generates grounded answer]
 ```
 
 This is what distinguishes it from plain RAG: semantic search alone finds text that *sounds* relevant, but has no notion of "this function calls that function." The graph traversal step adds structural relationships extracted directly from the AST — not guessed from text similarity.
@@ -70,6 +70,7 @@ repograph/
 ├── viewer.py         # load graph.pkl, interactive PyVis visualization (click-to-highlight)
 ├── query.py          # load graph.pkl + embeddings.pkl, answer natural-language questions
 ├── requirements.txt
+├── .env.example
 └── demo.gif
 ```
 
@@ -81,6 +82,11 @@ repograph/
 pip install -r requirements.txt
 ```
 
+Copy `.env.example` to `.env` and add your [OpenRouter](https://openrouter.ai) API key:
+
+```
+OPENROUTER_API_KEY=your_key_here
+```
 
 ---
 
@@ -122,6 +128,7 @@ python viewer.py
 
 ## Known limitations
 
+- **Cross-file resolution** depends on explicit `import` statements being present; it does not do deeper module/package resolution.
 - **Config and doc files** (`.yaml`, `.json`, `README.md`) are detected but not yet parsed, chunked, or embedded — the retrieval layer currently only reasons over Python function/class content.
 - **No formal retrieval evaluation** exists yet. Testing so far has been manual: a set of ground-truth questions (e.g. "what calls `load_params`?") checked by hand against the known graph structure. A next step would be a small benchmark set of (query, expected function) pairs to measure precision@k.
 - **Single language** — the graph schema (nodes/edges) is language-agnostic, but extraction is Python-only (`ast`). Multi-language support would need a parser like tree-sitter per language.
@@ -142,6 +149,3 @@ python viewer.py
 ## Built with
 
 Python `ast` · NetworkX · PyVis · sentence-transformers (`all-MiniLM-L6-v2`) · OpenRouter API
-Built with
-
-Python ast · NetworkX · PyVis · sentence-transformers (all-MiniLM-L6-v2) · OpenRouter API
