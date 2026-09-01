@@ -70,7 +70,6 @@ repograph/
 ├── viewer.py         # load graph.pkl, interactive PyVis visualization (click-to-highlight)
 ├── query.py          # load graph.pkl + embeddings.pkl, answer natural-language questions
 ├── requirements.txt
-├── .env.example
 └── demo.gif
 ```
 
@@ -82,11 +81,6 @@ repograph/
 pip install -r requirements.txt
 ```
 
-Copy `.env.example` to `.env` and add your [OpenRouter](https://openrouter.ai) API key:
-
-```
-OPENROUTER_API_KEY=your_key_here
-```
 
 ---
 
@@ -128,9 +122,6 @@ python viewer.py
 
 ## Known limitations
 
-- **Call resolution** only handles simple `name()` calls (`ast.Name`). Attribute-style calls (`pd.read_csv()`, `self.method()`, `module.func()`) are not yet resolved to specific nodes — this is likely the majority of calls in real-world code and is the most impactful next improvement.
-- **Class instantiation** isn't tracked as a resolvable call target yet — only functions are checked during local resolution.
-- **Cross-file resolution** depends on explicit `import` statements being present; it does not do deeper module/package resolution.
 - **Config and doc files** (`.yaml`, `.json`, `README.md`) are detected but not yet parsed, chunked, or embedded — the retrieval layer currently only reasons over Python function/class content.
 - **No formal retrieval evaluation** exists yet. Testing so far has been manual: a set of ground-truth questions (e.g. "what calls `load_params`?") checked by hand against the known graph structure. A next step would be a small benchmark set of (query, expected function) pairs to measure precision@k.
 - **Single language** — the graph schema (nodes/edges) is language-agnostic, but extraction is Python-only (`ast`). Multi-language support would need a parser like tree-sitter per language.
