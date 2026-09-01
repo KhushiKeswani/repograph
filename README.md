@@ -84,7 +84,6 @@ repograph/
 ├── viewer.py         # load graph.pkl, interactive PyVis visualization (click-to-highlight)
 ├── query.py          # load graph.pkl + embeddings.pkl, answer natural-language questions
 ├── requirements.txt
-├── .env.example
 └── demo.gif
 ```
 
@@ -94,12 +93,6 @@ repograph/
 
 ```bash
 pip install -r requirements.txt
-```
-
-Copy `.env.example` to `.env` and add your [OpenRouter](https://openrouter.ai) API key:
-
-```
-OPENROUTER_API_KEY=your_key_here
 ```
 
 ---
