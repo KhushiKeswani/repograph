@@ -7,70 +7,50 @@ print("Loaded graph OK")
 print("Nodes:", G.number_of_nodes())
 print("Edges:", G.number_of_edges())
 # FUNCTION: GET GRAPH FOR ONE FILE
-def get_file_graph(G, selected_file):
-
+def get_2hop_graph(G, start_node, max_hops=2):
     H = nx.MultiDiGraph()
-    # Add the selected FILE node
-    for node, data in G.nodes(data=True):
 
-        if (
-            data["type"] == "file"
-            and data["file"] == selected_file
-        ):
+    queue = [(start_node, 0)]
+    visited = {start_node}
+
+    while queue:
+        node, depth = queue.pop(0)
+
+        H.add_node(node, **G.nodes[node])
+
+        if depth == max_hops:
+            continue
+
+        for neighbor in G.successors(node):
+
+            # Only follow CALLS relationships
+            calls = G.get_edge_data(node, neighbor, default={})
+
+            has_call = any(
+                edge_data.get("type") == "CALLS"
+                for edge_data in calls.values()
+            )
+
+            if not has_call:
+                continue
+
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append((neighbor, depth + 1))
 
             H.add_node(
-                node,
-                **data
+                neighbor,
+                **G.nodes[neighbor]
             )
-    # Add FUNCTIONS and CLASSES belonging to this file
-    for node, data in G.nodes(data=True):
 
-        if (
-            data["file"] == selected_file
-            and data["type"] in {"function", "class","external"}
-        ):
+            for _, edge_data in calls.items():
+                if edge_data.get("type") == "CALLS":
+                    H.add_edge(
+                        node,
+                        neighbor,
+                        **edge_data
+                    )
 
-            H.add_node(
-                node,
-                **data
-            )
-    # 3. ADD EDGES FROM SELECTED FILE
-    for source, target, data in G.edges(data=True):
-
-        edge_type = data.get("type")
-
-        # We only care about these relationships
-        if edge_type not in {
-            "CONTAINS",
-            "CALLS",
-            "CALLS_UNRESOLVED"
-        }:
-            continue
-        # Is the SOURCE inside our selected file?
-        if source not in H.nodes:
-            continue
-        # Normal target
-        if target in G.nodes:
-            target_data = G.nodes[target]
-            # If target is already in H, simply add edge
-            if target in H.nodes:
-
-                H.add_edge(
-                    source,
-                    target,
-                    **data
-                )
-            # External / unresolved target
-            elif target_data.get("type") == "external":
-                H.add_node(
-                    target,
-                    **target_data
-                )
-                H.add_edge(
-                    source,
-                    target,
-                    **data
-                )
     return H
 
 # SHOW AVAILABLE FILES
@@ -98,11 +78,32 @@ print(
     "\nSelected file:",
     selected_file
 )
+file_nodes_for_selection = [
+    (node, data)
+    for node, data in G.nodes(data=True)
+    if data.get("file") == selected_file
+    and data.get("type") in {"function", "class", "method"}
+]
 
+print("\nAVAILABLE NODES\n")
+
+for i, (node, data) in enumerate(file_nodes_for_selection):
+    print(f"{i + 1}. {data['type']} :: {data['name']}")
+
+node_choice = int(
+    input("\nSelect a starting node: ")
+)
+
+start_node = file_nodes_for_selection[node_choice - 1][0]
+
+print(
+    "\nSelected node:",
+    G.nodes[start_node]["name"]
+)
 # BUILD VISUALIZATION GRAPH
-H = get_file_graph(
+H = get_2hop_graph(
     G,
-    selected_file
+    start_node
 )
 
 print(
